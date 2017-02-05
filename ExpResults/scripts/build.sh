@@ -26,6 +26,7 @@ DIRSOURCES=$1
 DIREXP=$2
 
 DIRECJ="$DIRSOURCES/ecj/ec/"
+DIRTDIFF="$DIRSOURCES/diff/"
 DIRTLBO="$DIRSOURCES/meme/"
 # this is the list of temporary files we produce during this script
 # each separated by a space e.g. "one two three"
@@ -51,11 +52,13 @@ mkdir $DIRTMP
 cd $DIRTMP
 cp -r $DIRTLBO ./
 cp -r $DIRECJ ./
+cp -r $DIRTDIFF ./
 
-mv ./meme ./ec/ 
+mv ./meme ./ec/
+mv ./diff/  ./ec/  
 
 # building
-javac -cp . ./ec/meme/*.java 
+javac -cp . ./ec/meme/*.java ./ec/diff/*.java 
 if [ $? != 0 ] 
 then 
 	echo "Take another look to the source..."
@@ -64,7 +67,7 @@ fi
 
  
 # building ECJ.jar 
-jar cfm ${DIREXP}/.codebase/ECJ.jar ./ec/meme/manifest.mf ./ec/*.class ./ec/*/*.class ./ec/*/*/*.class 
+jar cfm  ../ECJ.jar ./ec/*/manifest.mf  ./ec/*.class ./ec/*/*.class ./ec/*/*/*.class
 
 # done in the temporary build folder, going back to DIREXP
 cd $DIREXP
