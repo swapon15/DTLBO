@@ -1,0 +1,12 @@
+rawData.TLBO = read.table("./tlbo.result.bst.all", header = F)
+tlbo.data = as.matrix(rawData.TLBO)
+v = as.vector(rowMeans(tlbo.data))
+par( mfrow = c (2, 2))
+plot(v[1:2499], type = "l", xlab = "generations", ylab = "Fitness for Sphere", main = "TLBO")
+plot(v[2500:4997], type = "l", xlab = "generations", ylab = "Fitness for Inverted Schwefel", main = "TLBO")
+
+rawData.DE = read.table("./de.result.bst.all", header = F)
+de.data = as.matrix(rawData.DE)
+v = as.vector(rowMeans(de.data))
+plot(v[1:5000], type = "l", xlab = "generations", ylab = "Fitness for Sphere", main = "DE")
+plot(v[5001:10000], type = "l", xlab = "generations", ylab = "Fitness for Inverted Schwefel", main = "DE")
