@@ -24,6 +24,7 @@ public class CustomStatistics extends SimpleStatistics
 		{
 			best_i[x] = state.population.subpops[x].individuals[0];
 
+			/** Printing each individuals withn a generation ******/
 			for (int m = 0; m <state.population.subpops[x].individuals.length; m++)
 				state.population.subpops[x].individuals[m].printIndividualForHumans(state, statisticslog);
 

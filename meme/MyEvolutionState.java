@@ -7,6 +7,9 @@ import ec.util.*;
 /**
  * 
  * Evaluation state that conforms teacher and learner phase
+ * The design may be done in different ways as in DE.
+ * But in that case, the flow would be 
+ * initialization > [evaluation > breeding > evaluation > breeding > evaluation]
  *
  */
 public class MyEvolutionState extends SimpleEvolutionState 
@@ -19,6 +22,10 @@ public class MyEvolutionState extends SimpleEvolutionState
 	private int popSize;
 	private Population pop;
 	private Subpopulation subpop;
+	private static final String TEST_FUNCTION_1 = "dejongn5";
+	private static final String TEST_FUNCTION_2 = "dejongn5v1";
+	private static final String ALGORITHM = "tlbo"; 
+
 	public void startFresh() 
 	{
 		double _minGene;
@@ -97,7 +104,8 @@ public class MyEvolutionState extends SimpleEvolutionState
 			for (int x  = 0; x < len; x++)
 				genome[x] = original.genome[x];
 
-			String problemType = (this.generation < this.numGenerations/2) ? "ackley" : "invschawfel" ;  
+			int environmentID = bmrks.getEnvironmentID(this.generation, ALGORITHM);
+			String problemType = (environmentID % 2 == 0) ? TEST_FUNCTION_1 : TEST_FUNCTION_2  ;
 
 			double originalFx = bmrks.getFx(genome, problemType);
 
@@ -127,7 +135,8 @@ public class MyEvolutionState extends SimpleEvolutionState
 			//			for (int i = 0; i < original.genomeLength(); i++)
 			//				  System.out.print(variantGenome[i] + " ");
 			//			System.out.println();
-			problemType = (this.generation < this.numGenerations/2) ? "ackley" : "invschawfel" ;			
+			environmentID = bmrks.getEnvironmentID(this.generation, ALGORITHM);
+			problemType = (environmentID % 2 == 0) ?  TEST_FUNCTION_1 : TEST_FUNCTION_2 ;  
 
 			double variantFx = bmrks.getFx(variantGenome, problemType);
 			//	System.out.println("Index " +indis + " original " +bmrks.getFx(originalGenome) + " variant " +bmrks.getFx(variantGenome));
@@ -174,15 +183,16 @@ public class MyEvolutionState extends SimpleEvolutionState
 				for (int gene = 0; gene < dummyInd.genomeLength(); gene++)
 					differenceMean[gene] =  -rands[gene]*(myGenome[gene] - mateGenome[gene]);				
 			}
-			String problemType = (this.generation < this.numGenerations/2) ? "ackley" : "invschawfel" ;
+			int environmentID = bmrks.getEnvironmentID(this.generation, ALGORITHM);
+			String problemType = (environmentID % 2 == 0) ?  TEST_FUNCTION_1 : TEST_FUNCTION_2 ;  
 			for (int gene = 0; gene < dummyInd.genomeLength(); gene++)
 			{
 				newGenome[gene] += differenceMean[gene];
-				if (problemType.compareTo("ackley") == 0)
-				{
-					minGene = -32;
-					maxGene = 32;
-				}
+				//				if (problemType.compareTo("ackley") == 0)
+				//				{
+				//					minGene = -32;
+				//					maxGene = 32;
+				//				}
 				newGenome[gene] = Math.max(minGene, newGenome[gene]);
 				newGenome[gene] = Math.min(maxGene, newGenome[gene]);
 			}
@@ -214,7 +224,8 @@ public class MyEvolutionState extends SimpleEvolutionState
 				for (int x = 0; x < len; x++)
 					genome[x] = ind.genome[x];
 
-				String problemType = (this.generation < this.numGenerations/2) ? "ackley" : "invschawfel" ;
+				int environmentID = bmrks.getEnvironmentID(this.generation, ALGORITHM);
+				String problemType = (environmentID % 2 == 0) ?  TEST_FUNCTION_1 : TEST_FUNCTION_2 ;   
 
 				double fx = bmrks.getFx(genome, problemType);
 				((SimpleFitness)ind.fitness).setFitness(this, fx, false);

@@ -27,8 +27,11 @@ public class DEBreeder extends Breeder
 
 	ArrayList<Integer> popIndex = new ArrayList<Integer>();
 	Random rand = new Random();
-	private static final double RANDOM_IMMIGRANT_RATIO = 0.30;
+	private static final double RANDOM_IMMIGRANT_RATIO = 0;
 	private Benchmarks bmrks;
+	
+	private String TEST_FUNCTION_1 = "dejongn5";
+	private String TEST_FUNCTION_2 = "dejongn5v1";
 
 	public void setup(final EvolutionState state, final Parameter base) 
 	{
@@ -88,13 +91,14 @@ public class DEBreeder extends Breeder
 		}
 
 		previousPopulation = state.population;
-
+		
+		
 		// Injects random immigrant into populations 
 		int retries = 0;	
 		int len = state.population.subpops[0].individuals.length;
 		double sizeRandomImmigrant =  len * RANDOM_IMMIGRANT_RATIO;
 		DoubleVectorIndividual immigrant, original;
-		String problemType = (state.generation < state.numGenerations/2) ? "ackley" : "invschawfel" ;
+		String problemType = (state.generation < state.numGenerations/2) ? TEST_FUNCTION_1 : TEST_FUNCTION_2 ;
 
 		do
 		{
@@ -104,18 +108,17 @@ public class DEBreeder extends Breeder
 			if (!popIndex.contains(index))
 				popIndex.add(index);
 
-			if (retries > sizeRandomImmigrant * 10)
+			if (retries > sizeRandomImmigrant * 100)
 				break;
 
 
 			immigrant = (DoubleVectorIndividual)state.population.subpops[0].species.newIndividual(state, 0);
-			original = (DoubleVectorIndividual)state.population.subpops[0].individuals[index];
+			original  = (DoubleVectorIndividual)state.population.subpops[0].individuals[index];
+            original  = immigrant;
+		
 
-			for (int i = 0; i < original.genome.length; i++)
-				original.genome[i] = immigrant.genome[i];
-
-			double fitImmigrant = bmrks.getFx(immigrant.genome, problemType);
-			((SimpleFitness)immigrant.fitness).setFitness(state, fitImmigrant, false);
+			double fitImmigrant = bmrks.getFx(original.genome, problemType);
+			((SimpleFitness)original.fitness).setFitness(state, fitImmigrant, false);
 
 		} while(popIndex.size() <= sizeRandomImmigrant);
 

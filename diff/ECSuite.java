@@ -4,6 +4,7 @@ import ec.util.*;
 import ec.*;
 import ec.simple.*;
 import ec.vector.*;
+import ec.meme.*;
 
 
 /**
@@ -13,6 +14,9 @@ import ec.vector.*;
  */
 public class ECSuite extends Problem implements SimpleProblemForm
     {
+	private Benchmarks bmrks;
+	private static final double MAX_DE_JONG_N5_MAX = 3905.93;
+	private static final double MAX_INV_SCHWEFEL = 2513.9;
     public static final String P_SEED = "seed";
     public static final String P_WHICH_PROBLEM = "type";
 
@@ -41,6 +45,11 @@ public class ECSuite extends Problem implements SimpleProblemForm
     public static final String V_LUNACEK = "lunacek" ;
     public static final String V_ACKLEY = "ackley" ;
     public static final String  V_INVERTED_SCHAWFEL = "invSchawfel" ;
+    public static final String  V_SPHERE_V1 = "spherev1" ;
+    public static final String  V_INVERTED_SCHAWFEL_V1 = "invSchawfelv1" ;
+    public static final String  V_DE_JONG_N5_MAX = "dejongn5" ;
+    public static final String  V_INV_DE_JONG_N5_MAX = "dejongn5v1" ;
+    
 
     public static final int PROB_ROSENBROCK = 0;
     public static final int PROB_RASTRIGIN = 1;
@@ -62,7 +71,15 @@ public class ECSuite extends Problem implements SimpleProblemForm
     public static final int PROB_LUNACEK = 17 ;
     public static final int PROB_ACKLEY = 18 ;
     public static final int PROB_INVERTED_SCHAWFEL = 19 ;
-
+    public static final int PROB_SPHERE_V1 = 20 ;
+    public static final int PROB_INVERTED_SCHAWFEL_V1 = 21 ;
+    public static final int PROB_DE_JONG_N5_MAX = 22 ;
+    public static final int PROB_INV_DE_JONG_N5_MAX = 23 ;
+    
+	private int TEST_FUNCTION_1 = PROB_DE_JONG_N5_MAX;
+	private int TEST_FUNCTION_2 = PROB_INV_DE_JONG_N5_MAX;
+	private static final String ALGORITHM = "de"; 
+    
 
     public int problemType = PROB_ROSENBROCK;  // defaults on Rosenbrock
 
@@ -87,7 +104,11 @@ public class ECSuite extends Problem implements SimpleProblemForm
     V_LENNARDJONES,
     V_LUNACEK,
     V_ACKLEY,
-    V_INVERTED_SCHAWFEL
+    V_INVERTED_SCHAWFEL,
+    V_SPHERE_V1,
+    V_INVERTED_SCHAWFEL_V1,
+    V_DE_JONG_N5_MAX,
+    V_INV_DE_JONG_N5_MAX
     };
 
     public static final double minRange[] = new double[]
@@ -111,7 +132,11 @@ public class ECSuite extends Problem implements SimpleProblemForm
     	    -3.0,           // lennard-jones
     	    -5.0,       // lunacek
     	    -32.0,       //Ackley
-    	    -500.0       //inverted Schawefel
+    	    -500.0,       //inverted Schawefel
+    	    -500.0,          // spherev1
+    	    -500.0,   //inverted schwefelv1
+    	    -2.048,   // de jong n5 max
+    	    -2.048    // inverted de jong n5 max
     	    };
 
     	    public static final double maxRange[] = new double[]
@@ -135,7 +160,11 @@ public class ECSuite extends Problem implements SimpleProblemForm
     	    3.0,                                // lennard-jones
     	    5.0,                 // lunacek
     	    32.0,
-    	    500             //inverted Schawefel
+    	    500.0,             //inverted Schawefel
+    	    500.0,             //spherev1
+    	    500.0,   //inverted schwefelv1
+    	    2.048,   // de jong n5 max
+    	    2.048    // inverted de jong n5 max
     	    };
 
     public long seed;  // rotation seed for rotation problems
@@ -187,6 +216,7 @@ public class ECSuite extends Problem implements SimpleProblemForm
         {
         super.setup(state, base);
         String wp = state.parameters.getStringWithDefault( base.push( P_WHICH_PROBLEM ), null, "" );
+        bmrks = Benchmarks.getInstance();
         if( wp.compareTo( V_ROSENBROCK ) == 0 || wp.compareTo (V_F2)==0 )
             problemType = PROB_ROSENBROCK;
         else if ( wp.compareTo( V_RASTRIGIN ) == 0 )
@@ -232,6 +262,14 @@ public class ECSuite extends Problem implements SimpleProblemForm
             problemType = PROB_ACKLEY ;
         else if (wp.compareTo(V_INVERTED_SCHAWFEL) == 0)
         	problemType = PROB_INVERTED_SCHAWFEL;
+        else if (wp.compareTo(V_SPHERE_V1) == 0)
+        	problemType = PROB_SPHERE_V1;
+        else if (wp.compareTo(V_INVERTED_SCHAWFEL_V1) == 0)
+        	problemType = PROB_INVERTED_SCHAWFEL_V1;
+        else if (wp.compareTo(V_DE_JONG_N5_MAX) == 0)
+        	problemType = PROB_DE_JONG_N5_MAX;
+        else if (wp.compareTo(V_INV_DE_JONG_N5_MAX) == 0)
+        	problemType = PROB_INV_DE_JONG_N5_MAX;
         
 
         else state.output.fatal(
@@ -278,14 +316,15 @@ public class ECSuite extends Problem implements SimpleProblemForm
         DoubleVectorIndividual temp = (DoubleVectorIndividual)ind;
         double[] genome = temp.genome;
 
-        problemType = (state.generation < state.numGenerations/2) ?  PROB_ACKLEY : PROB_INVERTED_SCHAWFEL ;
+        int environmentID = bmrks.getEnvironmentID(state.generation, ALGORITHM);
+		int problemType = (environmentID % 2 == 0) ? TEST_FUNCTION_1 : TEST_FUNCTION_2  ;  
+       
+ 
         double fit = (function(state, problemType, temp.genome, threadnum));
+       
+        
 
-        // compute if we're optimal on a per-function basis
-        boolean isOptimal = isOptimal(problemType, fit);
-
-        // set the fitness appropriately
-        if (fit < (0.0 - Double.MAX_VALUE))  // uh oh -- can be caused by Product for example
+        if (fit < (0.0 - Double.MAX_VALUE))  
             {
             ((SimpleFitness)(ind.fitness)).setFitness( state, 0.0 - Double.MAX_VALUE, false );
             state.output.warnOnce("'Product' type used: some fitnesses are negative infinity, setting to lowest legal negative number.");
@@ -308,12 +347,16 @@ public class ECSuite extends Problem implements SimpleProblemForm
         switch(problemType)
             {
             case PROB_ROSENBROCK:
-            case PROB_RASTRIGIN:
-            case PROB_SPHERE:
+            case PROB_RASTRIGIN:           
             case PROB_STEP:
             case PROB_ACKLEY:
                 return fitness == 0.0;
-
+            case PROB_INVERTED_SCHAWFEL:
+            case PROB_INVERTED_SCHAWFEL_V1:
+            case PROB_DE_JONG_N5_MAX:
+            case PROB_INV_DE_JONG_N5_MAX:
+            case PROB_SPHERE:	
+            case PROB_SPHERE_V1:
             case PROB_NOISY_QUARTIC:
             case PROB_BOOTH:
             case PROB_GRIEWANK:
@@ -574,9 +617,44 @@ public class ECSuite extends Problem implements SimpleProblemForm
                     {
                     double gi = genome[i] ;
                     value += -gi * Math.sin(Math.sqrt(Math.abs(gi)));
-                    }             
-                return -value;
-                        
+                    }          
+                 value = -1 * value;
+                return value;
+            case PROB_SPHERE_V1:
+                for( int i = 0 ; i < len ; i++ )
+                    {
+                    double gi = genome[i] ;
+                    value += gi * gi;
+                    }
+                return MAX_DE_JONG_N5_MAX - value;       
+            
+            case PROB_INVERTED_SCHAWFEL_V1:	
+                for( int i = 0 ; i < len ; i++ )
+                    {
+                    double gi = genome[i] ;
+                    value += -gi * Math.sin(Math.sqrt(Math.abs(gi)));
+                    }         
+                  value = -1 * value;
+                return MAX_INV_SCHWEFEL - value;   
+                
+            case PROB_DE_JONG_N5_MAX: //De Jong's N5
+    			for( int i = 1 ; i < len ; i++ )
+    			{
+    				double gj = genome[i-1] ;
+    				double gi = genome[i] ;
+    				value += 100 * (gj*gj - gi) * (gj*gj - gi) +  (1-gj) * (1-gj);
+    			}
+    			value = MAX_DE_JONG_N5_MAX - value;
+    			return value;
+    			
+    		case PROB_INV_DE_JONG_N5_MAX: //De Jong's N5 inverted
+    			for( int i = 1 ; i < len ; i++ )
+    			{
+    				double gj = genome[i-1] ;
+    				double gi = genome[i] ;
+    				value += 100 * (gj*gj - gi) * (gj*gj - gi) +  (1-gj) * (1-gj); 
+    			}
+    			return value;   
             default:
                 state.output.fatal( "ec.app.ecsuite.ECSuite has an invalid problem -- how on earth did that happen?" );
                 return 0;  // never happens

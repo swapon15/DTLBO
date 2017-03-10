@@ -12,22 +12,28 @@ import java.util.Random;
  */
 public class MyBreeder extends SimpleBreeder 
 {
-	private static final double RANDOM_IMMIGRANT_RATIO = 0.30;
+	private static final double RANDOM_IMMIGRANT_RATIO = 0;
+
+	private String TEST_FUNCTION_1 = "dejongn5";
+	private String TEST_FUNCTION_2 = "dejongn5v1";
+	private static final String ALGORITHM = "tlbo"; 
+	
 	private Benchmarks bmrks;
 	public Population breedPopulation(EvolutionState state) 
 	{
 		ArrayList<Integer> popIndex = new ArrayList<Integer>();
 		Random rand = new Random();
-		Population newPop = (Population) state.population;
-		Subpopulation subpop = newPop.subpops[0];
+		Population newPop = (Population) state.population; // current population
+		Subpopulation subpop = newPop.subpops[0];				
+		bmrks = Benchmarks.getInstance();
+ 
+		int environmentID = bmrks.getEnvironmentID(state.generation, ALGORITHM);
+		String problemType = (environmentID % 2 == 0) ? TEST_FUNCTION_1 : TEST_FUNCTION_2  ;  
+
+		int retries = 0;
+		DoubleVectorIndividual immigrant, original;
 		int len = subpop.individuals.length;
 		double sizeRandomImmigrant =  len * RANDOM_IMMIGRANT_RATIO;
-		int retries = 0;	
-		DoubleVectorIndividual immigrant, original;
-		bmrks = Benchmarks.getInstance();
-
-		String problemType = (state.generation < state.numGenerations/2) ? "ackley" : "invschawfel" ;  
-
 		do
 		{
 			int index = rand.nextInt(len);
@@ -36,18 +42,16 @@ public class MyBreeder extends SimpleBreeder
 			if (!popIndex.contains(index))
 				popIndex.add(index);
 
-			if (retries > sizeRandomImmigrant * 10)
+			if (retries > sizeRandomImmigrant * 100)
 				break;
 
 
 			immigrant = (DoubleVectorIndividual)subpop.species.newIndividual(state, 0);
-			original = (DoubleVectorIndividual)subpop.individuals[index];
-
-			for (int i = 0; i < original.genome.length; i++)
-				original.genome[i] = immigrant.genome[i];
-
-			double fitImmigrant = bmrks.getFx(immigrant.genome, problemType);
-			((SimpleFitness)immigrant.fitness).setFitness(state, fitImmigrant, false);
+			original  = (DoubleVectorIndividual)subpop.individuals[index];
+			original  = immigrant; // replace original individual[index] by immigrant
+					
+			double fitImmigrant = bmrks.getFx(original.genome, problemType);
+			((SimpleFitness)original.fitness).setFitness(state, fitImmigrant, false);
 
 		} while(popIndex.size() <= sizeRandomImmigrant);
 
